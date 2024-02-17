@@ -57,11 +57,59 @@ import { token } from "../typechain-types/@openzeppelin/contracts";
                 expect(await stakingContract.balanceOf(owner.address)).to.equal(amountStaked)
         });
 
-        it("test that we can keep track of when the user lastUpdated equal to the latest block timestamp", async function () {
-            await staking.deposit(amount)
+        it("test that we can keep track of when the user an account interact with the app", async function () {
+            const {stakingContract, emaxToken, owner, amountStaked, amountAllowedToSpend} = await loadFixture(deploySmartContract);
+
+            emaxToken.connect(owner).approve(stakingContract.target, amountAllowedToSpend);
+
+            await stakingContract.deposit(amountStaked)
             const latest = await time.latest()
-            expect(await staking.lastUpdated(signer.address)).to.eq(latest)
-          })
+            expect(await stakingContract.lastUpdated(owner.address)).to.equal(latest);
+          });
+
+        it("test the total amount staked can increase as we deposit ", async()=>{
+            const {stakingContract, emaxToken, owner, amountStaked, amountAllowedToSpend}
+             = await loadFixture(deploySmartContract);
+
+            emaxToken.connect(owner).approve(stakingContract.target, amountAllowedToSpend);
+
+            await stakingContract.deposit(amountStaked)
+            const latest = await time.latest()
+            expect(await stakingContract.totalStaked()).to.equal(amountStaked);
+
+        })
+
+          it("should revert if staking address not approved", async function () {
+            const {stakingContract, emaxToken, owner, amountStaked, amountAllowedToSpend}
+             = await loadFixture(deploySmartContract);
+
+            await expect(stakingContract.connect(owner).deposit(amountStaked)).to.be.reverted
+          });
+
+          it("should revert if address has insufficient balance", async function () {
+            const {stakingContract, emaxToken, owner,otherAccount}
+            = await loadFixture(deploySmartContract);
+            const totalSupply = await emaxToken.totalSupply();
+            console.log(totalSupply)
+            
+            await emaxToken.connect(otherAccount).approve(stakingContract.target, totalSupply)
+            await expect(stakingContract.connect(otherAccount).deposit(totalSupply)).to.be.reverted
+          });
+    });
+    describe("Deposit Event ", async ()=>{
+        it("test that event can be emitted after depositing", async()=>{
+            const {stakingContract, emaxToken, owner, amountStaked, amountAllowedToSpend}
+            = await loadFixture(deploySmartContract);
+            emaxToken.connect(owner).approve(stakingContract.target, amountAllowedToSpend);
+
+            await expect(stakingContract.deposit(amountStaked)).to.emit(stakingContract, "Deposit").withArgs(
+                owner.address, amountStaked);
+        });
+
     })
+    describe("Reward Stakers ",async ()=>{
+        
+    })
+
 
   })
