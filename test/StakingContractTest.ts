@@ -108,8 +108,39 @@ import { token } from "../typechain-types/@openzeppelin/contracts";
 
     })
     describe("Reward Stakers ",async ()=>{
-        
+        it("should have 10 rewards after one hour", async function () {
+            const {stakingContract, emaxToken, owner, amountStaked, amountAllowedToSpend}
+            = await loadFixture(deploySmartContract);
+
+            emaxToken.connect(owner).approve(stakingContract.target, amountAllowedToSpend);
+                
+            await stakingContract.deposit(10000);
+
+            
+            // expect(await stakingContract.balanceOf(owner.address)).to.equal(amountStaked);
+
+            await time.increase(60*60)
+            expect(await stakingContract.rewards(owner.address)).to.equal(ethers.parseEther("10"))
+          });
+
+          
+          it("should have 0.1 reward after 36 seconds", async function () {
+            const {stakingContract, emaxToken, owner, amountStaked, amountAllowedToSpend}
+            = await loadFixture(deploySmartContract);
+
+            emaxToken.connect(owner).approve(stakingContract.target, amountAllowedToSpend);
+                
+            await stakingContract.deposit(10000);
+
+
+            await time.increase(36)
+            expect(await stakingContract.rewards(owner.address)).to.eq(ethers.parseEther("0.1"))
+          })
+          
+          
     })
+
+
 
 
   })
